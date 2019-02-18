@@ -1,3 +1,4 @@
 activemq:
   broker-url: vm://embedded-broker?create=true&broker.persistent=false
 
+server.port : 8081

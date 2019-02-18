@@ -57,7 +57,8 @@
     import Vue from "vue";
     import {AgGridVue} from "ag-grid-vue";
     import axios from 'axios'
-    
+    import { Observable } from "rxjs"
+
     export default {
         data() {
             return {
@@ -68,6 +69,23 @@
                 sideBar: true,
                 rowCount: null
             }
+        },
+
+        mounted () {
+            let observable$ = Observable.create( ( observer ) => {
+                axios.get( 'http://localhost:8080/topic/price-updates' )
+                .then( ( response ) => {
+                    observer.next( response.data );
+                    observer.complete();
+                } )
+                .catch( ( error ) => {
+                    observer.error( error );
+                } );
+            } );
+            let subscription = observable$.subscribe( {
+                next: data => console.log( '[data] => ', data ),
+                complete: data => console.log( '[complete]' ),
+            } );
         },
         components: {
             AgGridVue
@@ -146,6 +164,16 @@
                     cellRenderer: "agAnimateSlideCellRenderer"
                 }
                 ];
+                this.defaultColDef = { resizable: true };
+                this.rowSelection = "multiple";
+                this.getRowNodeId = data => {
+                    return data.code;
+                };
+                this.components = {
+                    rowIdRenderer: params => {
+                        return "" + params.rowIndex;
+                    }
+                };
             },
             pad(num, totalStringSize) {
                 let asString = num + "";
