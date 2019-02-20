@@ -67,13 +67,21 @@
                 rowData: null,
                 showGrid: false,
                 sideBar: true,
-                rowCount: null
+                rowCount: null,
+                observable: null,
+                subscription: null,
+                actual_msg: '',
+                total_items: -1,
+                items: [],
+                loading: false,
+                evtSource: null
+
             }
         },
 
         mounted () {
-            let observable$ = Observable.create( ( observer ) => {
-                axios.get( 'http://localhost:8080/topic/price-updates' )
+           /* this.observable = Observable.create( ( observer ) => {
+                axios.get( 'http://localhost:8081/topic/price-updates' )
                 .then( ( response ) => {
                     observer.next( response.data );
                     observer.complete();
@@ -82,10 +90,29 @@
                     observer.error( error );
                 } );
             } );
-            let subscription = observable$.subscribe( {
+            this.subscription = this.observable.subscribe( {
                 next: data => console.log( '[data] => ', data ),
                 complete: data => console.log( '[complete]' ),
-            } );
+            } );*/
+
+          var streamUrl = 'http://localhost:8080/topic/price-updates';
+      
+          this.evtSource = new EventSource(streamUrl);
+          this.loading = true;
+
+          this.evtSource.addEventListener('message', function (e) {
+            var item = e.data;
+            if(item !== 'heartbeat...') {
+                console.log('received ' + item);
+            }
+          }, false);
+
+          this.evtSource.addEventListener('close', function (e) {
+            evtSource.close();
+            this.loading = false;
+          }, false);
+
+            
         },
         components: {
             AgGridVue
