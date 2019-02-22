@@ -20,7 +20,8 @@
                          :enableFilter="true"
                          :groupHeaders="true"
                          :suppressRowClickSelection="true"
-                         rowSelection="multiple"
+                         :rowSelection="multiple"
+                         :getRowNodeId="getRowNodeId"
 
                          :modelUpdated="onModelUpdated"
                          :rowDataChanged="onRowDataChanged"
@@ -74,11 +75,13 @@
                 total_items: -1,
                 items: [],
                 loading: false,
-                evtSource: null
-
+                evtSource: null,
+                getRowNodeId: null
             }
         },
-
+        search(item, code) {
+            return item.code === code;
+        },
         mounted () {
            /* this.observable = Observable.create( ( observer ) => {
                 axios.get( 'http://localhost:8081/topic/price-updates' )
@@ -104,6 +107,9 @@
             var item = e.data;
             if(item !== 'heartbeat...') {
                 console.log('received ' + item);
+                const index = this.rowData.find(search(item));
+                console.log('receivindexed ' + index);
+
             }
           }, false);
 
@@ -308,6 +314,14 @@
             this.createRowData();
             this.createColumnDefs();
             this.showGrid = true;
+            this.getRowNodeId = data => {
+                return data.code;
+            };
+            this.components = {
+                rowIdRenderer: params => {
+                    return "" + params.rowIndex;
+                }
+            }
         }
     }
 
