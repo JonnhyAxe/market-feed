@@ -21,7 +21,14 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class MessageListenerContainerFactory {
 
-    @Value("${activemq.broker-url}")
+    private static final String CREATE_CONNECTION_WITH_ID = "Create connection with id {}";
+	private static final String ERROR_CREATING_CONNECTION_WITH_BROKER = "Error creating connection with broker";
+	private static final String ERROR_CLOSING_THE_BROKER = "Error closing the broker";
+	private static final String ERROR_CREATING_PRODUCER_SESSION_TO_THE_BROKER = "Error creating producer session to the broker";
+	private static final String ERROR_CREATING_CONSUMER_SESSION_TO_THE_BROKER = "Error creating consumer session to the broker";
+
+
+	@Value("${activemq.broker-url}")
     private String brokerUrl;
 
 	
@@ -47,16 +54,15 @@ public class MessageListenerContainerFactory {
 		try {
 			topicConnection = connectionFactory.createTopicConnection();
 			String randomId = id + UUID.randomUUID();
-			topicConnection.setClientID(id);
-			log.info("Create connection with id {}", randomId);
+			topicConnection.setClientID(randomId);
+			log.info(CREATE_CONNECTION_WITH_ID, randomId);
 
 
 		} catch (JMSException e) {
-			log.error("Error creating connection with broker");
+			log.error(ERROR_CREATING_CONNECTION_WITH_BROKER);
 			log.error(e.getMessage());		
 		}	
 		return topicConnection;
-
     }
     
     
@@ -64,55 +70,35 @@ public class MessageListenerContainerFactory {
 		try {
 			topicConnection.close();
 		} catch (JMSException e) {
-			log.error("Error closing the broker");
+			log.error(ERROR_CLOSING_THE_BROKER);
 			log.error(e.getMessage());
 		}	
     }
     
     
     public TopicSession createTopicProducerConnectionSession(String topicName, TopicConnection topicConnection) {
-//    	TopicConnectionFactory connectionFactory = new ActiveMQConnectionFactory(
-//				"tcp://localhost:61616");
-//    	TopicConnection topicConnection = null;
+
     	TopicSession topicPublisherSession = null;
 		try {
 			topicPublisherSession = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-//			Topic topic = topicPublisherSession.createTopic(topicName);
-//
-//			Message msg = topicPublisherSession.createTextMessage(payload);
-//			TopicPublisher publisher = topicPublisherSession.createPublisher(topic);
-//			System.out.println("Sending text '" + payload + "'");
-//			publisher.publish(msg);
 		} catch (JMSException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error(ERROR_CREATING_PRODUCER_SESSION_TO_THE_BROKER);
+			log.error(e.getMessage());
 		}	
 		return topicPublisherSession;
 
     }
     
     public TopicSession createTopicConsumerConnectionSession(String topicName, TopicConnection topicConnection) {
-//    	TopicConnectionFactory connectionFactory = new ActiveMQConnectionFactory(
-//				"tcp://localhost:61616");
-//    	TopicConnection topicConnection = null;
     	TopicSession topicConsumerSession = null;
 		try {
-			topicConsumerSession = topicConnection.createTopicSession(
-					false, Session.AUTO_ACKNOWLEDGE);			
-//			Topic topic = topicConsumerSession.createTopic(topicName);
-//			MessageConsumer consumer1 = topicConsumerSession.createSubscriber(topic);
-//			consumer1.setMessageListener(new ConsumerMessageListener(
-//					"Consumer1"));
-//			topicConnection.start();
+			topicConsumerSession = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);			
 
 		} catch (JMSException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error(ERROR_CREATING_CONSUMER_SESSION_TO_THE_BROKER);
+			log.error(e.getMessage());
 		}	
 		return topicConsumerSession;
-
     }
 
-
-    
 }

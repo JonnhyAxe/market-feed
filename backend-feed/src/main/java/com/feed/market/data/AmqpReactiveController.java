@@ -13,8 +13,6 @@ import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 
 import org.apache.activemq.command.ActiveMQTextMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +21,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.feed.market.data.dto.DataDTO;
+import com.feed.market.data.dto.mapper.DataMapper;
+import com.feed.market.data.model.Data;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -47,7 +49,7 @@ public class AmqpReactiveController {
 	private static final String MESSAGE_SENT_TO_CLIENT_TOPIC_TEXT = "Message sent to client, topic={}, text={}";
 	private static final String ERROR_SENDING_MESSAGE_TO_CLIENT = "Error sending message to client";
 	private static final String ERROR_CLOSING_BROKER_CONNECTION = "Error closing broker connection";
-	private static final String STARTING_CONTAINER_QUEUE = "Starting container, queue={}";
+	private static final String STARTING_CONTAINER_TOPIC = "Starting container, topic={}";
 	private static final String CONTAINER_STARTED_TOPIC = "Container started, topic={}";
 	private static final String ERROR_CREATING_SESSION_BROKER_CONNECTION = "Error creating session broker connection";
 	private static final String SENDING_HEARTBEAT = "Sending heartbeat...";
@@ -56,15 +58,17 @@ public class AmqpReactiveController {
     private MessageListenerContainerFactory messageListenerContainerFactory;
 
 
-    /**
+	@Autowired
+	private DataMapper dataMapper;
+	   /**
      * send message to a given topic
      * @param topicName
      * @param payload
      * @return
      */
     @PostMapping(value = PUBLISHER_TOPIC_NAME)
-    public Mono<ResponseEntity<?>> sendMessageToTopic(@PathVariable String topicName, @RequestBody String payload) {
-
+    public Mono<ResponseEntity<?>> sendTypedMessageToTopic(@PathVariable String topicName, @RequestBody DataDTO payload) {
+    	
         TopicConnection mlc = messageListenerContainerFactory.createTopicConnection(topicName, PRODUCER);
         TopicSession mlcSession = messageListenerContainerFactory.createTopicProducerConnectionSession(topicName, mlc);
 		log.info(SENDING_TEXT_TO_TOPIC, payload, topicName);
@@ -74,26 +78,30 @@ public class AmqpReactiveController {
     		Message msg;
     		TopicPublisher publisher;
     		try {
-    			msg = mlcSession.createTextMessage(payload);
+    			Data message = dataMapper.dtoToModel(payload);
+    			msg = mlcSession.createTextMessage(message.getMessage());
     			topic = mlcSession.createTopic(topicName);
     			publisher = mlcSession.createPublisher(topic);
     		    mlc.start();
                 publisher.publish(msg);
     	        log.info(SEND_MESSAGE_TO_TOPIC, topicName);
+    	        
     		} catch (JMSException e) {
+    			
     			log.error(ERROR_SENDING_MESSAGE_TO_TOPIC, payload, topicName);
 				log.error(e.getMessage());
+				return ResponseEntity.badRequest()
+			                .build();
     		} finally {
     			mlcSession.close();
     			mlc.stop();
     		}
-
+    		
             return ResponseEntity.accepted()
                 .build();
         });
-       
     }
-
+    
     @GetMapping(value = SUBSCRIBER_TOPIC_NAME, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<?> receiveMessagesFromTopic(@PathVariable String name) {
 
@@ -148,7 +156,7 @@ public class AmqpReactiveController {
 			}
 
             emitter.onRequest(v -> {
-                log.info(STARTING_CONTAINER_QUEUE, name);
+                log.info(STARTING_CONTAINER_TOPIC, name);
                 try {
 					topicConsumerConnection.start();
 				} catch (JMSException e) {
@@ -176,7 +184,7 @@ public class AmqpReactiveController {
 			log.error(e.getMessage());
 		}
         
-        return Flux.interval(Duration.ofSeconds(5))
+        return Flux.interval(Duration.ofSeconds(30))
           .map(v -> {
                 log.info(SENDING_HEARTBEAT);
                 return HEARTBEAT_MSG;
