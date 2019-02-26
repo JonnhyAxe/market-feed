@@ -65,7 +65,7 @@
             return {
                 gridOptions: null,
                 columnDefs: null,
-                rowData: null,
+                rowData: [],
                 showGrid: false,
                 sideBar: true,
                 rowCount: null,
@@ -79,53 +79,31 @@
                 getRowNodeId: null
             }
         },
+        beforeCreate() {
+            console.log('Nothing gets called before me!')
+        },
+        created(){ 
+            console.log('created ' + this.rowData);
+            this.setupStream();
+            setInterval(() => {
+                this.counter++
+                console.log('log ' + this.counter);
+            }, 1000)
+        },
+        mounted(){
+            console.log('mounted ' + this.rowData);
+        },
         search(item, code) {
             return item.code === code;
-        },
-        mounted () {
-           /* this.observable = Observable.create( ( observer ) => {
-                axios.get( 'http://localhost:8081/topic/price-updates' )
-                .then( ( response ) => {
-                    observer.next( response.data );
-                    observer.complete();
-                } )
-                .catch( ( error ) => {
-                    observer.error( error );
-                } );
-            } );
-            this.subscription = this.observable.subscribe( {
-                next: data => console.log( '[data] => ', data ),
-                complete: data => console.log( '[complete]' ),
-            } );*/
-
-          var streamUrl = 'http://localhost:8080/topic/price-updates';
-      
-          this.evtSource = new EventSource(streamUrl);
-          this.loading = true;
-
-          this.evtSource.addEventListener('message', function (e) {
-            var item = e.data;
-            if(item !== 'heartbeat...') {
-                console.log('received ' + item);
-                const index = this.rowData.find(search(item));
-                console.log('receivindexed ' + index);
-
-            }
-          }, false);
-
-          this.evtSource.addEventListener('close', function (e) {
-            evtSource.close();
-            this.loading = false;
-          }, false);
-
-            
         },
         components: {
             AgGridVue
         },
         methods: {
+            mountedMethod(){
+             
+            },
             createRowData() {
-                const rowDataTmp = [];
                 const httpRequest = new XMLHttpRequest();
 
                 httpRequest.open("GET", "https://rawgit.com/ag-grid/ag-grid/master/packages/ag-grid-docs/src/stocks.json");
@@ -145,6 +123,7 @@
                             }); 
                         });
                         this.rowData = rowDataTmp;
+
                     }   
                 }
             },
@@ -232,12 +211,53 @@
                 console.log('onModelUpdated');
                 this.calculateRowCount();
             },
+            updatePice(e, rowData){
+            var vm = this;
+                    var item = this.rowData;
+                    if(item !== 'heartbeat...') {
+                        console.log('received ' + item);
+                        //const index = this.rowData.find(search(item));
 
+                        for (var j = 0; j < rowData.length; j++){
+                            console.log(rowData[j].code);
+                        }
+
+                    }
+            },
+            onClick: function (ev) {
+                
+             console.log(ev);
+            },
             onReady() {
-                console.log('onReady');
+                
+
                 this.calculateRowCount();
             },
+            setupStream() {
 
+                console.log('onReady' + this.rowData);
+                // Not a real URL, just using for demo purposes
+                let es = new EventSource('http://localhost:8080/topic/price-updates');
+
+                es.addEventListener('message', event => {
+                    if(event.data !== 'heartbeat...') {
+                            console.log('received ' + event.data );
+                            //const index = this.rowData.find(search(item));
+
+                            for (var j = 0; j < this.rowData.length; j++){
+                                console.log(this.rowData[j].code);
+                            }
+
+                        }
+                }, false);
+
+                es.addEventListener('error', event => {
+                    if (event.readyState == EventSource.CLOSED) {
+                        console.log('Event was closed');
+                        console.log(EventSource);
+                    }
+                    }, false);
+            },
             onCellClicked(event) {
                 console.log('onCellClicked: ' + event.rowIndex + ' ' + event.colDef.field);
             },
@@ -310,9 +330,11 @@
             }
         },
         beforeMount() {
+            console.log(`this.$el doesn't exist yet, but it will soon!`)
             this.gridOptions = {};
             this.createRowData();
             this.createColumnDefs();
+  
             this.showGrid = true;
             this.getRowNodeId = data => {
                 return data.code;
@@ -324,6 +346,8 @@
             }
         }
     }
+
+
 
     function numberFormatter(params) {
         if (typeof params.value === "number") {
