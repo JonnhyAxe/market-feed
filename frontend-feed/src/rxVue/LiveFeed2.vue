@@ -63,6 +63,7 @@
     export default {
         data() {
             return {
+                gridApi: null,
                 gridOptions: null,
                 columnDefs: null,
                 rowData: [],
@@ -85,13 +86,13 @@
         created(){ 
             console.log('created ' + this.rowData);
             this.setupStream();
-            setInterval(() => {
-                this.counter++
-                console.log('log ' + this.counter);
-            }, 1000)
         },
         mounted(){
             console.log('mounted ' + this.rowData);
+  
+            this.gridApi = this.gridOptions.api;
+            this.gridColumnApi = this.gridOptions.columnApi;
+
         },
         search(item, code) {
             return item.code === code;
@@ -106,7 +107,7 @@
             createRowData() {
                 const httpRequest = new XMLHttpRequest();
 
-                httpRequest.open("GET", "https://rawgit.com/ag-grid/ag-grid/master/packages/ag-grid-docs/src/stocks.json");
+                httpRequest.open("GET", "http://localhost:8080/markets");
                 httpRequest.send();
                 httpRequest.onreadystatechange = () => {
                     if (httpRequest.readyState === 4 && httpRequest.status === 200) {
@@ -116,10 +117,10 @@
                                 rowDataTmp.push({
                                     code: item.code,
                                     name: item.name,
-                                    bid:  item.bid != undefined ? item.bid : '',
-                                    mid: item.mid != undefined ? item.mid : '',
-                                    ask: item.ask != undefined ? item.ask : '',
-                                    volume: item.volume != undefined ? item.volume : ''                           
+                                    bid:  item.bid != undefined ? item.bid : '1',
+                                    mid: item.mid != undefined ? item.mid : '2',
+                                    ask: item.ask != undefined ? item.ask : '3',
+                                    volume: item.volume != undefined ? item.volume : '12'                           
                             }); 
                         });
                         this.rowData = rowDataTmp;
@@ -203,6 +204,7 @@
             },
             onRowDataChanged() {
                 Vue.nextTick(() => {
+                        console.log('onRowDataChanged')
                         this.gridOptions.api.sizeColumnsToFit();
                     }
                 );
@@ -211,26 +213,7 @@
                 console.log('onModelUpdated');
                 this.calculateRowCount();
             },
-            updatePice(e, rowData){
-            var vm = this;
-                    var item = this.rowData;
-                    if(item !== 'heartbeat...') {
-                        console.log('received ' + item);
-                        //const index = this.rowData.find(search(item));
-
-                        for (var j = 0; j < rowData.length; j++){
-                            console.log(rowData[j].code);
-                        }
-
-                    }
-            },
-            onClick: function (ev) {
-                
-             console.log(ev);
-            },
             onReady() {
-                
-
                 this.calculateRowCount();
             },
             setupStream() {
@@ -243,11 +226,23 @@
                     if(event.data !== 'heartbeat...') {
                             console.log('received ' + event.data );
                             //const index = this.rowData.find(search(item));
+                            let obj = event.data;
+                            console.log('rowData ' + this.rowData);
+                            console.log('rowData ' + this.rowData.length);
 
-                            for (var j = 0; j < this.rowData.length; j++){
-                                console.log(this.rowData[j].code);
-                            }
 
+                            //https://www.ag-grid.com/javascript-grid-refresh/
+
+                            let item = JSON.parse(event.data);
+                            var rowNode = this.gridApi.getRowNode(item.code);
+                            var newPrice = Math.floor(Math.random() * 100000);
+
+                            rowNode.setDataValue("bid", newPrice);
+                            rowNode.setDataValue("mid", item.mid);
+                            rowNode.setDataValue("ask", item.ask);
+                            return;
+                                
+                            
                         }
                 }, false);
 
@@ -281,7 +276,7 @@
             // taking out, as when we 'select all', it prints to much to the console!!
             // eslint-disable-next-line
             onRowSelected(event) {
-                // console.log('onRowSelected: ' + event.node.data.name);
+                console.log('onRowSelected: ' + event.node.data.name);
             },
 
             onSelectionChanged() {
@@ -355,48 +350,6 @@
         } else {
             return params.value;
         }
-    }
-
-    function countryCellRenderer(params) {
-        let flag = "<img border='0' width='15' height='10' style='margin-bottom: 2px' src='https://raw.githubusercontent.com/ag-grid/ag-grid-docs/master/src/images/flags/" + RefData.COUNTRY_CODES[params.value] + ".png'>";
-        return flag + " " + params.value;
-    }
-
-    function createRandomPhoneNumber() {
-        let result = '+';
-        for (let i = 0; i < 12; i++) {
-            result += Math.round(Math.random() * 10);
-            if (i === 2 || i === 5 || i === 8) {
-                result += ' ';
-            }
-        }
-        return result;
-    }
-
-    function percentCellRenderer(params) {
-        let value = params.value;
-
-        let eDivPercentBar = document.createElement('div');
-        eDivPercentBar.className = 'div-percent-bar';
-        eDivPercentBar.style.width = value * 10 + '%';
-        if (value < 2) {
-            eDivPercentBar.style.backgroundColor = 'red';
-        } else if (value < 6) {
-            eDivPercentBar.style.backgroundColor = '#ff9900';
-        } else {
-            eDivPercentBar.style.backgroundColor = '#00A000';
-        }
-
-        let eValue = document.createElement('div');
-        eValue.className = 'div-percent-value';
-        eValue.innerHTML = value ;
-
-        let eOuterDiv = document.createElement('div');
-        eOuterDiv.className = 'div-outer-div';
-        eOuterDiv.appendChild(eValue);
-        eOuterDiv.appendChild(eDivPercentBar);
-
-        return eOuterDiv;
     }
 
 </script>

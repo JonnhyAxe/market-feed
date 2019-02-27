@@ -1,6 +1,7 @@
 package com.feed.market.data;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 
 import javax.jms.JMSException;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.feed.market.data.dto.DataDTO;
 import com.feed.market.data.dto.mapper.DataMapper;
 import com.feed.market.data.model.Data;
+import com.feed.market.data.model.Markets;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -54,12 +56,21 @@ public class AmqpReactiveController {
 	private static final String ERROR_CREATING_SESSION_BROKER_CONNECTION = "Error creating session broker connection";
 	private static final String SENDING_HEARTBEAT = "Sending heartbeat...";
 	
+
+	
 	@Autowired
     private MessageListenerContainerFactory messageListenerContainerFactory;
 
 
 	@Autowired
 	private DataMapper dataMapper;
+	
+	@GetMapping(path="/markets", produces = "application/json")
+    public List<Markets> getMarkets() {
+        return MarketConfig.markets;
+    }
+     
+	
 	   /**
      * send message to a given topic
      * @param topicName
@@ -192,5 +203,4 @@ public class AmqpReactiveController {
           .mergeWith(f);
 
     }
-
 }
