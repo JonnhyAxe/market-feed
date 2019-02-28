@@ -108,21 +108,21 @@ public class WebConfig extends WebMvcConfigurationSupport {
 	        .addResourceLocations("classpath:/META-INF/resources/index.html");
 	  }
 
-	  @Bean
-	  public FilterRegistrationBean<Filter> someFilterRegistration() {
+//	  @Bean
+//	  public FilterRegistrationBean<Filter> someFilterRegistration() {
+//
+//	    final FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
+//	    registration.setFilter(etagFilter());
+//	    registration.addUrlPatterns("/*");
+//	    registration.setName("etagFilter");
+//	    registration.setOrder(1);
+//	    return registration;
+//	  }
 
-	    final FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
-	    registration.setFilter(etagFilter());
-	    registration.addUrlPatterns("/*");
-	    registration.setName("etagFilter");
-	    registration.setOrder(1);
-	    return registration;
-	  }
-
-	  @Bean(name = "etagFilter")
-	  public Filter etagFilter() {
-
-	    return new ShallowEtagHeaderFilter();
-	  }
+//	  @Bean(name = "etagFilter")
+//	  public Filter etagFilter() {
+//
+//	    return new ShallowEtagHeaderFilter();
+//	  }
 
 }

@@ -224,25 +224,15 @@
 
                 es.addEventListener('message', event => {
                     if(event.data !== 'heartbeat...') {
-                            console.log('received ' + event.data );
-                            //const index = this.rowData.find(search(item));
-                            let obj = event.data;
-                            console.log('rowData ' + this.rowData);
-                            console.log('rowData ' + this.rowData.length);
-
-
                             //https://www.ag-grid.com/javascript-grid-refresh/
 
                             let item = JSON.parse(event.data);
                             var rowNode = this.gridApi.getRowNode(item.code);
-                            var newPrice = Math.floor(Math.random() * 100000);
-
-                            rowNode.setDataValue("bid", newPrice);
+                            rowNode.setDataValue("bid", item.bid);
                             rowNode.setDataValue("mid", item.mid);
                             rowNode.setDataValue("ask", item.ask);
-                            return;
-                                
-                            
+                            rowNode.setDataValue("volume", item.volume);
+                            return; 
                         }
                 }, false);
 

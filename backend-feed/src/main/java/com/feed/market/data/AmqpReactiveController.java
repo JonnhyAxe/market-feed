@@ -25,8 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.feed.market.data.dto.DataDTO;
 import com.feed.market.data.dto.mapper.DataMapper;
+import com.feed.market.data.mockeserver.MessageProducer;
 import com.feed.market.data.model.Data;
-import com.feed.market.data.model.Markets;
+import com.feed.market.data.model.MarketData;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -61,12 +62,13 @@ public class AmqpReactiveController {
 	@Autowired
     private MessageListenerContainerFactory messageListenerContainerFactory;
 
-
 	@Autowired
 	private DataMapper dataMapper;
 	
+	@Autowired MessageProducer messageProducer;
+	
 	@GetMapping(path="/markets", produces = "application/json")
-    public List<Markets> getMarkets() {
+    public List<MarketData> getMarkets() {
         return MarketConfig.markets;
     }
      
@@ -111,6 +113,32 @@ public class AmqpReactiveController {
             return ResponseEntity.accepted()
                 .build();
         });
+    }
+    
+    
+    @PostMapping(value = "/start-publishing/{topicName}")
+    public Mono<ResponseEntity<?>> startProducer(@PathVariable String topicName) {
+
+        return Mono.fromCallable(() -> {
+        	if(messageProducer.startProducing(topicName)) {
+        		 return ResponseEntity.accepted().build();
+        	} 
+        	return ResponseEntity.badRequest().build();
+        	
+        });
+    }
+    
+    
+    @PostMapping(value = "/stop-publishing/{topicName}")
+    public Mono<ResponseEntity<?>> stopProducer(@PathVariable String topicName) {
+    	
+    	  return Mono.fromCallable(() -> {
+          	if(messageProducer.stopProducing(topicName)) {
+          		 return ResponseEntity.accepted() .build();
+          	} 
+          	return ResponseEntity.badRequest().build();
+          	
+          });
     }
     
     @GetMapping(value = SUBSCRIBER_TOPIC_NAME, produces = MediaType.TEXT_EVENT_STREAM_VALUE)

@@ -12,10 +12,10 @@ public interface DataMapper {
 	
 
     @Mapping(target="message", source="body")
-	Data dtoToModel(DataDTO artistDTO);
+	Data dtoToModel(DataDTO messageDTO);
     
     @Mappings({
-        @Mapping(target="body", source="artist"),
+        @Mapping(target="body", source="message"),
       })
-	DataDTO modelToDto(String artist);
+	DataDTO modelToDto(String message);
 }
