@@ -63,11 +63,12 @@ public class MessageProducerImpl implements MessageProducer {
 	    
 	@Autowired
     private MessageListenerContainerFactory messageListenerContainerFactory;
-	
+
 	private TopicConnection mlc ;
     private TopicSession mlcSession ;
     private Topic topic;
     private Message msg;
+    private TopicPublisher publisher;
 	
 	public Boolean startProducing(String topicName) {
 
