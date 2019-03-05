@@ -15,15 +15,11 @@ import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.feed.market.data.MarketConfig;
 import com.feed.market.data.MessageListenerContainerFactory;
-import com.feed.market.data.dto.mapper.DataMapper;
-import com.feed.market.data.model.Data;
 import com.feed.market.data.model.MarketData;
 
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class MessageProducerImpl implements MessageProducer {
 	
+	private static final int START_NOW = 0;
+
 	private static final String PRODUCER = "Producer";
 
 	private static final String SENDING_TEXT_TO_TOPIC = "Sending text '{}' to topic '{}'";
@@ -42,17 +40,16 @@ public class MessageProducerImpl implements MessageProducer {
 	
 	private ObjectMapper mapper = new ObjectMapper();
 	
-	private TimerTask repeatedTask = new TimerTask() {
+	private TimerTask RANDOM_MARKET_CHANGE_TASK = new TimerTask() {
         public void run() {
         	System.out.println("Task publish on " + new Date());
         	MarketData marketMove =  makeSomeChanges();
-        	String MarketDataStringified ;
+        	
         	try {
-        		MarketDataStringified = mapper.writeValueAsString(marketMove);
           		String payload = mapper.writeValueAsString(marketMove);
         		Message msg = mlcSession.createTextMessage(payload);
     			publisher.publish(msg);
-            	log.info(SENDING_TEXT_TO_TOPIC);
+            	log.info(SENDING_TEXT_TO_TOPIC, payload, topic);
             	
         	} catch (Exception e) {
 				log.error("Error creating string from MarketData '{}'", marketMove);
@@ -67,7 +64,6 @@ public class MessageProducerImpl implements MessageProducer {
 	private TopicConnection mlc ;
     private TopicSession mlcSession ;
     private Topic topic;
-    private Message msg;
     private TopicPublisher publisher;
 	
 	public Boolean startProducing(String topicName) {
@@ -80,7 +76,7 @@ public class MessageProducerImpl implements MessageProducer {
 			publisher = mlcSession.createPublisher(topic);
 		    mlc.start();
          
-	        log.info("Publisher created for topic '{}'", topicName);
+	        log.info("Publisher created for topic '{}'", topicName, topic);
 	        
 		} catch (JMSException e) {
 			
@@ -91,7 +87,7 @@ public class MessageProducerImpl implements MessageProducer {
 		
        log.info("Starting streaming with '{}'", topicName);
       
-       executor.scheduleAtFixedRate(repeatedTask, 0, 1, TimeUnit.MILLISECONDS);
+       executor.scheduleAtFixedRate(RANDOM_MARKET_CHANGE_TASK, START_NOW, 10, TimeUnit.MILLISECONDS);
        return Boolean.TRUE;
 	}
 
