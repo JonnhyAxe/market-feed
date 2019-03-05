@@ -40,24 +40,6 @@ public class MessageProducerImpl implements MessageProducer {
 	
 	private ObjectMapper mapper = new ObjectMapper();
 	
-	private TimerTask RANDOM_MARKET_CHANGE_TASK = new TimerTask() {
-        public void run() {
-        	System.out.println("Task publish on " + new Date());
-        	MarketData marketMove =  makeSomeChanges();
-        	
-        	try {
-          		String payload = mapper.writeValueAsString(marketMove);
-        		Message msg = mlcSession.createTextMessage(payload);
-    			publisher.publish(msg);
-            	log.info(SENDING_TEXT_TO_TOPIC, payload, topic);
-            	
-        	} catch (Exception e) {
-				log.error("Error creating string from MarketData '{}'", marketMove);
-				return;
-			}
-        }
-    };
-	    
 	@Autowired
     private MessageListenerContainerFactory messageListenerContainerFactory;
 
@@ -128,5 +110,26 @@ public class MessageProducerImpl implements MessageProducer {
 	     
 	     return dataItem.toBuilder().build(); 
 	 }
-
+	 
+	private TimerTask RANDOM_MARKET_CHANGE_TASK = new TimerTask() {
+	    public void run() {
+	    	sendMArketDataChnaged();
+	    }
+	};
+	      
+	public void sendMArketDataChnaged() {
+		System.out.println("Task publish on " + new Date());
+    	MarketData marketMove =  makeSomeChanges();
+    	
+    	try {
+      		String payload = mapper.writeValueAsString(marketMove);
+    		Message msg = mlcSession.createTextMessage(payload);
+			publisher.publish(msg);
+        	log.info(SENDING_TEXT_TO_TOPIC, payload, topic);
+        	
+    	} catch (Exception e) {
+			log.error("Error creating string from MarketData '{}'", marketMove);
+			return;
+		}
+	}
 }
