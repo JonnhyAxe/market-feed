@@ -57,8 +57,9 @@
 <script>
     import Vue from "vue";
     import {AgGridVue} from "ag-grid-vue";
-    import axios from 'axios'
-    import { Observable } from "rxjs"
+    import { fromEvent, Observable, Subscriber } from 'rxjs';
+    import axios from 'axios';
+    import axiosCancel from 'axios-cancel';
 
     export default {
         data() {
@@ -72,12 +73,14 @@
                 rowCount: null,
                 observable: null,
                 subscription: null,
+                observable$: null,
                 actual_msg: '',
                 total_items: -1,
                 items: [],
                 loading: false,
                 evtSource: null,
-                getRowNodeId: null
+                getRowNodeId: null,
+                url: 'http://localhost:8080/topic/price-updates'
             }
         },
         beforeCreate() {
@@ -85,7 +88,9 @@
         },
         created(){ 
             console.log('created ' + this.rowData);
-            this.setupStream();
+            //this.setupStream();
+            //this.setupVueRxStream();
+            this.getQuoteStream();
         },
         mounted(){
             console.log('mounted ' + this.rowData);
@@ -143,12 +148,12 @@
                 {
                     headerName: "Name",
                     field: "name",
-                    width: 300
+                    width: 150
                 },
                 {
                     headerName: "Bid",
                     field: "bid",
-                    width: 100,
+                    width: 30,
                     cellClass: "cell-number",
                     valueFormatter: numberFormatter,
                     cellRenderer: "agAnimateShowChangeCellRenderer"
@@ -156,7 +161,7 @@
                 {
                     headerName: "Mid",
                     field: "mid",
-                    width: 100,
+                    width: 30,
                     cellClass: "cell-number",
                     valueFormatter: numberFormatter,
                     cellRenderer: "agAnimateShowChangeCellRenderer"
@@ -164,7 +169,7 @@
                 {
                     headerName: "Ask",
                     field: "ask",
-                    width: 100,
+                    width: 30,
                     cellClass: "cell-number",
                     valueFormatter: numberFormatter,
                     cellRenderer: "agAnimateShowChangeCellRenderer"
@@ -172,7 +177,7 @@
                 {
                     headerName: "Volume",
                     field: "volume",
-                    width: 80,
+                    width: 50,
                     cellClass: "cell-number",
                     cellRenderer: "agAnimateSlideCellRenderer"
                 }
@@ -216,81 +221,95 @@
             onReady() {
                 this.calculateRowCount();
             },
-            setupStream() {
+            getQuoteStream() {
+                this.observable$ =  Observable.create((observer) => {
+                    let url = this.url;
+                    
+                    let eventSource = new EventSource(url);
 
-                console.log('onReady' + this.rowData);
-                // Not a real URL, just using for demo purposes
-                let es = new EventSource('http://localhost:8080/topic/price-updates');
-
-                es.addEventListener('message', event => {
-                    if(event.data !== 'heartbeat...') {
-                            //https://www.ag-grid.com/javascript-grid-refresh/
-
+                    eventSource.onmessage = (event) => {
+                        console.debug('Received event: ', event);
+                        if(event.data !== 'heartbeat...') {
                             let item = JSON.parse(event.data);
-                            var rowNode = this.gridApi.getRowNode(item.code);
-                            rowNode.setDataValue("bid", item.bid);
-                            rowNode.setDataValue("mid", item.mid);
-                            rowNode.setDataValue("ask", item.ask);
-                            rowNode.setDataValue("volume", item.volume);
-                            return; 
-                        }
-                }, false);
 
-                es.addEventListener('error', event => {
-                    if (event.readyState == EventSource.CLOSED) {
-                        console.log('Event was closed');
-                        console.log(EventSource);
+                            observer.next(item); 
+                        }
+                        
                     }
-                    }, false);
+                    eventSource.onerror = (error) => {
+                        // readyState === 0 (closed) means the remote source closed the connection,
+
+                        if(eventSource.readyState === 0) {
+                            console.log('The stream has been closed by the server.');
+                            eventSource.close();
+                            observer.complete();
+                        } else {
+                            observer.error('EventSource error: ' + error);
+                        }
+                    }
+                });
+
+                this.subscription = this.observable$.subscribe( {
+                    next: data => {
+                           // Browser killer console.log( '[data] => ', data )
+                            var rowNode = this.gridApi.getRowNode(data.code);
+                            rowNode.setDataValue("bid", data.bid);
+                            rowNode.setDataValue("mid", data.mid);
+                            rowNode.setDataValue("ask", data.ask);
+                            rowNode.setDataValue("volume", data.volume);
+                    },
+                    complete: data => console.log( '[complete]' ),
+                } );
+
             },
             onCellClicked(event) {
-                console.log('onCellClicked: ' + event.rowIndex + ' ' + event.colDef.field);
+                //console.log('onCellClicked: ' + event.rowIndex + ' ' + event.colDef.field);
             },
 
             onCellValueChanged(event) {
-                console.log('onCellValueChanged: ' + event.oldValue + ' to ' + event.newValue);
+                //console.log('onCellValueChanged: ' + event.oldValue + ' to ' + event.newValue);
             },
 
             onCellDoubleClicked(event) {
-                console.log('onCellDoubleClicked: ' + event.rowIndex + ' ' + event.colDef.field);
+                //console.log('onCellDoubleClicked: ' + event.rowIndex + ' ' + event.colDef.field);
             },
 
             onCellContextMenu(event) {
-                console.log('onCellContextMenu: ' + event.rowIndex + ' ' + event.colDef.field);
+                //console.log('onCellContextMenu: ' + event.rowIndex + ' ' + event.colDef.field);
             },
 
             onCellFocused(event) {
-                console.log('onCellFocused: (' + event.rowIndex + ',' + event.colIndex + ')');
+                // console.log('onCellFocused: (' + event.rowIndex + ',' + event.colIndex + ')');
             },
 
             // taking out, as when we 'select all', it prints to much to the console!!
             // eslint-disable-next-line
             onRowSelected(event) {
-                console.log('onRowSelected: ' + event.node.data.name);
+               // console.log('onRowSelected: ' + event.node.data.name);
             },
 
             onSelectionChanged() {
-                console.log('selectionChanged');
+               // console.log('selectionChanged');
             },
 
             onBeforeFilterChanged() {
-                console.log('beforeFilterChanged');
+               // console.log('beforeFilterChanged');
             },
 
             onAfterFilterChanged() {
-                console.log('afterFilterChanged');
+               // console.log('afterFilterChanged');
             },
 
             onFilterModified() {
-                console.log('onFilterModified');
+               // console.log('onFilterModified');
             },
 
             onBeforeSortChanged() {
-                console.log('onBeforeSortChanged');
+               // console.log('onBeforeSortChanged');
             },
 
             onAfterSortChanged() {
-                console.log('onAfterSortChanged');
+                //console.log('onAfterSortChanged');
             },
 
             // eslint-disable-next-line
@@ -301,7 +320,7 @@
             },
 
             onRowClicked(event) {
-                console.log('onRowClicked: ' + event.node.data.name);
+               // console.log('onRowClicked: ' + event.node.data.name);
             },
 
             onQuickFilterChanged(event) {
@@ -311,7 +330,7 @@
             // here we use one generic event to handle all the column type events.
             // the method just prints the event name
             onColumnEvent(event) {
-                console.log('onColumnEvent: ' + event);
+                //console.log('onColumnEvent: ' + event);
             }
         },
         beforeMount() {

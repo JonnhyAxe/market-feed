@@ -15,19 +15,19 @@ import bButton from 'bootstrap-vue/es/components/button/button';
 
 import VueRx from 'vue-rx'
  
-Vue.use(VueRx)
+Vue.use(VueRx);
 
 Vue.component('b-button', bButton);
 Vue.component('b-table', bTable);
 
 Vue.use(VueRx, {
   Observable
-})
+});
 
-Vue.config.productionTip = false
+Vue.config.productionTip = false;
 
 // Bootstrap
-Vue.use(BootstrapVue)
+Vue.use(BootstrapVue);
 
 /* eslint-disable no-new */
 new Vue({
