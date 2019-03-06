@@ -21,12 +21,14 @@ import org.springframework.stereotype.Service;
 
 import com.feed.market.data.MarketConfig;
 import com.feed.market.data.MessageListenerContainerFactory;
-import com.feed.market.data.mockeserver.MessageProducer;
 import com.feed.market.data.model.Data;
 import com.feed.market.data.model.MarketData;
+import com.feed.market.data.producer.MessageProducer;
 
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -58,9 +60,6 @@ public class DataMessagingServiceImpl implements DataMessagingService {
     private MessageListenerContainerFactory messageListenerContainerFactory;
 
 	@Autowired MessageProducer messageProducer;
-	
-	
-	Map<String, Flux<?>> myMapStreams = new ConcurrentHashMap<String, Flux<?>>();
 
 	
 	@Override
@@ -106,17 +105,15 @@ public class DataMessagingServiceImpl implements DataMessagingService {
                        
         }
         
-        if(isTreamAvailable(name)) {
-        	return this.myMapStreams.get(name);
-        }
+     
     	
         javax.jms.TopicSession topicConsumerSession = messageListenerContainerFactory.createTopicConsumerConnectionSession(name, topicConsumerConnection);
-        Flux<String> flueStream = null;
+        Flux<String> fluxStream = null;
 		try {
 			Topic topic = topicConsumerSession.createTopic(name);
 			MessageConsumer consumer = topicConsumerSession.createSubscriber(topic);
 		
-            flueStream = Flux.<String> create(emitter -> {
+            fluxStream = Flux.<String> create(emitter -> {
 
             log.info(ADDING_LISTENER_TOPIC, name);
             try {
@@ -173,7 +170,7 @@ public class DataMessagingServiceImpl implements DataMessagingService {
 //        	Schedulers.elastic()?????
 
           });
-//            		.publishOn(publisher)//detache ActiveMQ onMessage
+          // .publishOn(Schedulers.elastic());//detache ActiveMQ onMessage
 //        			.doOnNext(it -> log.info(": Publish : '{}'", Thread.currentThread().getName()))
 //        			.subscribeOn(subscriber) // with client Push
 //        			.doOnNext(it -> log.info(": Subscribe : '{}'", Thread.currentThread().getName()));
@@ -183,14 +180,9 @@ public class DataMessagingServiceImpl implements DataMessagingService {
 			log.error(e.getMessage());
 		}
 		
-		this.myMapStreams.put(name, flueStream);
-		
-		return flueStream;
+		return fluxStream;
 	}
 
-	public boolean isTreamAvailable(String topicName) {
-		return this.myMapStreams.containsKey(topicName);
-	}
 
 	@Override
 	public List<MarketData> getLAvailableMarkets() {
