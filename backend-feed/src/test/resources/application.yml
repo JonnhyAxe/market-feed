@@ -1,2 +1,7 @@
 activemq:
   broker-url: vm://embedded-broker?broker.persistent=false
+ 
+ #Tom 
+server.tomcat.max-threads : 1
+#server.tomcat.max-threads : 50
+#server.jetty.acceptors

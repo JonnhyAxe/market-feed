@@ -36,7 +36,7 @@ public class MessageProducerImpl implements MessageProducer {
 
 	private static List<MarketData> marketsInfo  = MarketConfig.markets;
 
-	private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+	private ScheduledExecutorService executor;
 	
 	private ObjectMapper mapper = new ObjectMapper();
 	
@@ -66,10 +66,10 @@ public class MessageProducerImpl implements MessageProducer {
 			log.error(e.getMessage());
 			return Boolean.FALSE;
 		} 
-		
+	   this.executor =  Executors.newSingleThreadScheduledExecutor();
        log.info("Starting streaming with '{}'", topicName);
-      
-       executor.scheduleAtFixedRate(RANDOM_MARKET_CHANGE_TASK, START_NOW, 10, TimeUnit.MILLISECONDS);
+       executor.scheduleAtFixedRate(RANDOM_MARKET_CHANGE_TASK, START_NOW, 50, TimeUnit.MICROSECONDS);
+
        return Boolean.TRUE;
 	}
 
@@ -80,10 +80,14 @@ public class MessageProducerImpl implements MessageProducer {
 		 try {
 			mlcSession.close();
 			mlc.stop();
+			
 		} catch (JMSException e) {
 			return Boolean.FALSE;
 		}
-		executor.shutdown();
+		 if(!executor.isShutdown()) {
+			 executor.shutdown(); 
+		 }
+		
 		return Boolean.TRUE;
 	}
 	
@@ -108,7 +112,9 @@ public class MessageProducerImpl implements MessageProducer {
 	     dataItem.setVolume(Math.floor(Math.random() * 10000 + 100));
 	     log.debug("Data changed  '{}'", dataItem);
 	     
-	     return dataItem.toBuilder().build(); 
+//	     return dataItem.toBuilder().build(); 
+	     return dataItem; 
+
 	 }
 	 
 	private TimerTask RANDOM_MARKET_CHANGE_TASK = new TimerTask() {
@@ -118,18 +124,19 @@ public class MessageProducerImpl implements MessageProducer {
 	};
 	      
 	public void sendMArketDataChnaged() {
-		System.out.println("Task publish on " + new Date());
+		log.debug("Task publish on '{}'", new Date());
     	MarketData marketMove =  makeSomeChanges();
     	
     	try {
       		String payload = mapper.writeValueAsString(marketMove);
     		Message msg = mlcSession.createTextMessage(payload);
 			publisher.publish(msg);
-        	log.info(SENDING_TEXT_TO_TOPIC, payload, topic);
+        	log.debug(SENDING_TEXT_TO_TOPIC, payload, topic);
         	
     	} catch (Exception e) {
-			log.error("Error creating string from MarketData '{}'", marketMove);
+			log.error("Error publishing string from MarketData '{}'", marketMove);
 			return;
 		}
+    	
 	}
 }

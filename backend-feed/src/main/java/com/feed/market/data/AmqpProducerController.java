@@ -1,9 +1,9 @@
 package com.feed.market.data;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 
+import javax.annotation.PreDestroy;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -33,6 +33,8 @@ import com.feed.market.data.model.MarketData;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @RestController
@@ -59,8 +61,10 @@ public class AmqpProducerController {
 	private static final String ERROR_CREATING_SESSION_BROKER_CONNECTION = "Error creating session broker connection";
 	private static final String SENDING_HEARTBEAT = "Sending heartbeat...";
 	
+//	private Scheduler publisher = Schedulers.immediate();//newParallel("publisher", 50);
+//	private Scheduler subscriber = Schedulers.immediate();// Schedulers.newParallel("subscriber", 50);
 
-	
+	   
 	@Autowired
     private MessageListenerContainerFactory messageListenerContainerFactory;
 
@@ -127,28 +131,28 @@ public class AmqpProducerController {
         }
     	
         javax.jms.TopicSession topicConsumerSession = messageListenerContainerFactory.createTopicConsumerConnectionSession(name, topicConsumerConnection);
-        Flux<String> f = null;
+        Flux<String> flueStream = null;
 		try {
 			Topic topic = topicConsumerSession.createTopic(name);
 			MessageConsumer consumer = topicConsumerSession.createSubscriber(topic);
 		
-            f = Flux.<String> create(emitter -> {
+            flueStream = Flux.<String> create(emitter -> {
 
             log.info(ADDING_LISTENER_TOPIC, name);
             try {
 				consumer.setMessageListener((MessageListener) m -> {
 
-				    log.info(MESSAGE_RECEIVED_TOPIC, name);
+				    log.debug(MESSAGE_RECEIVED_TOPIC, name);
 
 				    if (emitter.isCancelled()) {
 				        log.info(CANCELLED_TOPIC, name);
-				        try {
-							topicConsumerConnection.stop();
-							topicConsumerSession.close();
-						} catch (JMSException e) {
-							log.error(ERROR_CLOSING_BROKER_CONNECTION);
-							log.error(e.getMessage());
-						}
+//				        try {
+//							topicConsumerConnection.stop();
+//							topicConsumerSession.close();
+//						} catch (JMSException e) {
+//							log.error(ERROR_CLOSING_BROKER_CONNECTION);
+//							log.error(e.getMessage());
+//						}
 				        return;
 				    }
 				    ActiveMQTextMessage msg =  (ActiveMQTextMessage)m; //Not cool?????
@@ -156,6 +160,8 @@ public class AmqpProducerController {
 //				    String payload ;ActiveMQMessage aMsg =  (ActiveMQMessage)m;
 					try {
 //						payload = new String(m.getBody(String.class)); 
+						
+					
 						emitter.next(msg.getText());
 						
 						log.info(MESSAGE_SENT_TO_CLIENT_TOPIC_TEXT, name, msg.getText());
@@ -177,37 +183,53 @@ public class AmqpProducerController {
 
             emitter.onDispose(() -> {
                 log.info(ON_DISPOSE_TOPIC, name);
-                try {
-					topicConsumerConnection.stop();
-					topicConsumerSession.close();
-					
-				} catch (JMSException e) {
-					log.error(e.getMessage());
-				}
+//                try {
+////					topicConsumerConnection.stop();
+////					topicConsumerSession.close();
+//					
+//				} catch (JMSException e) {
+//					log.error(e.getMessage());
+//				}
             });
             
         
             log.info(STARTING_CONTAINER_TOPIC, name);
             try {
+            	//more than on call when started is ignored.
 				topicConsumerConnection.start();
 			} catch (JMSException e) {
 				log.error(e.getMessage());
 			}
             log.info(CONTAINER_STARTED_TOPIC, name);
+            
+//        	Schedulers.elastic()?????
 
           });
+//            		.publishOn(publisher)//detache ActiveMQ onMessage
+//        			.doOnNext(it -> log.info(": Publish : '{}'", Thread.currentThread().getName()))
+//        			.subscribeOn(subscriber) // with client Push
+//        			.doOnNext(it -> log.info(": Subscribe : '{}'", Thread.currentThread().getName()));
         
 		} catch (JMSException e) {
 			log.error(ERROR_CREATING_SESSION_BROKER_CONNECTION);
 			log.error(e.getMessage());
 		}
-        
-        return Flux.interval(Duration.ofSeconds(30))
-          .map(v -> {
-                log.info(SENDING_HEARTBEAT);
-                return HEARTBEAT_MSG;
-          })
-          .mergeWith(f);
+//        
+//        return Flux.interval(Duration.ofSeconds(30))
+//          .map(v -> {
+//                log.info(SENDING_HEARTBEAT);
+//                return HEARTBEAT_MSG;
+//          })
+//          .mergeWith(f);
+		return flueStream;
 
     }
+    
+//    @PreDestroy
+//	public void initIt() throws Exception {
+//    	publisher.dispose();
+//    	subscriber.dispose();
+//	  	  
+//	}
+    
 }

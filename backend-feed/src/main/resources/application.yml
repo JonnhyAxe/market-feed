@@ -3,4 +3,10 @@ activemq:
 
 server.port : 8080
 
+# A thread pool executor dispatcher, named threadPoolExecutor
+#reactor.dispatchers.threadPoolExecutor.type : threadPoolExecutor
+#reactor.dispatchers.threadPoolExecutor.size : 512
+# Backlog is how many Task objects to warm up internally
+#reactor.dispatchers.threadPoolExecutor.backlog : 256
 
+#server.tomcat.max-threads : 50
