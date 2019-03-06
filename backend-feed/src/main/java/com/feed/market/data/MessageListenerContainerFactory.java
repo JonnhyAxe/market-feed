@@ -22,7 +22,6 @@ import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
 
-//http://activemq.apache.org/how-should-i-implement-request-response-with-jms.html
 
 @Slf4j
 @Component
@@ -45,32 +44,7 @@ public class MessageListenerContainerFactory {
     @Autowired
     private ActiveMQConnectionFactory connectionFactory;
 
-    
-    public MessageListenerContainer createMessageListenerContainer(String queueName) {
-    	
-//        https://www.baeldung.com/spring-remoting-jms
-        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-        container.setConnectionFactory(connectionFactory);
-        container.setDestinationName(queueName);
-        container.setConcurrentConsumers(50);
-        container.setDestination(new ActiveMQTopic(queueName));
-        container.isPubSubDomain();
-        
-        return container;
-    }
-    
-    
-//    public MessageListenerContainer createMessageProducer(String queueName) {
-//    	MessageListenerContainer producer = createMessageListenerContainer(queueName);
-//    	producer.setupMessageListener(messageListener);
-//
-//    	
-//      return producer;
-//  }
-    
-
-    
-    public TopicConnection createTopicConnection(String topicName, String id) {
+     public synchronized TopicConnection createTopicConnection(String topicName, String id) {
     	TopicConnection topicConnection = null;
     	String puSub = topicName + id;
 		try {
@@ -93,18 +67,7 @@ public class MessageListenerContainerFactory {
     private boolean notContainsConnections(String topicName) {
 		return !this.myMapConnections.containsKey(topicName);
 	}
-
-
-//	public void removeTopicConnection(TopicConnection topicConnection) {
-//		try {
-//			topicConnection.close();
-//		} catch (JMSException e) {
-//			log.error(ERROR_CLOSING_THE_BROKER);
-//			log.error(e.getMessage());
-//		}	
-//    }
-    
-    
+  
     public TopicSession createTopicProducerConnectionSession(String topicName, TopicConnection topicConnection) {
 
     	TopicSession topicPublisherSession = null;
