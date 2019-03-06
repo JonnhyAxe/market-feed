@@ -21,4 +21,4 @@ https://howtodoinjava.com/swagger2/code-generation-for-rest-api/
 https://github.com/OpenAPITools/openapi-generator
 https://github.com/OpenAPITools/openapi-generator/blob/master/modules/openapi-generator/src/main/java/org/openapitools/codegen/languages/SpringCodegen.java
 
-
+https://mucahit.io/2018/08/27/instrumenting-and-monitoring-spring-boot-2-applications/
