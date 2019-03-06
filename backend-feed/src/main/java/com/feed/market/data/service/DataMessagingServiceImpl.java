@@ -1,6 +1,9 @@
 package com.feed.market.data.service;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -16,9 +19,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.feed.market.data.MarketConfig;
 import com.feed.market.data.MessageListenerContainerFactory;
 import com.feed.market.data.mockeserver.MessageProducer;
 import com.feed.market.data.model.Data;
+import com.feed.market.data.model.MarketData;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -45,7 +50,6 @@ public class DataMessagingServiceImpl implements DataMessagingService {
 	private static final String STARTING_CONTAINER_TOPIC = "Starting container, topic={}";
 	private static final String CONTAINER_STARTED_TOPIC = "Container started, topic={}";
 	private static final String ERROR_CREATING_SESSION_BROKER_CONNECTION = "Error creating session broker connection";
-	private static final String SENDING_HEARTBEAT = "Sending heartbeat...";
 	
 //	private Scheduler publisher = Schedulers.immediate();//newParallel("publisher", 50);
 //	private Scheduler subscriber = Schedulers.immediate();// Schedulers.newParallel("subscriber", 50);
@@ -55,8 +59,13 @@ public class DataMessagingServiceImpl implements DataMessagingService {
 
 	@Autowired MessageProducer messageProducer;
 	
+	
+	Map<String, Flux<?>> myMapStreams = new ConcurrentHashMap<String, Flux<?>>();
+
+	
 	@Override
 	public Mono<ResponseEntity<?>> sendTypedMessage(String topicName, Data message) {
+
 		 TopicConnection mlc = messageListenerContainerFactory.createTopicConnection(topicName, PRODUCER);
 	        TopicSession mlcSession = messageListenerContainerFactory.createTopicProducerConnectionSession(topicName, mlc);
 			log.info(SENDING_TEXT_TO_TOPIC, message.getMessage(), topicName);
@@ -95,6 +104,10 @@ public class DataMessagingServiceImpl implements DataMessagingService {
         if(Objects.isNull(topicConsumerConnection)) {
         	   return Flux.empty();
                        
+        }
+        
+        if(isTreamAvailable(name)) {
+        	return this.myMapStreams.get(name);
         }
     	
         javax.jms.TopicSession topicConsumerSession = messageListenerContainerFactory.createTopicConsumerConnectionSession(name, topicConsumerConnection);
@@ -169,14 +182,19 @@ public class DataMessagingServiceImpl implements DataMessagingService {
 			log.error(ERROR_CREATING_SESSION_BROKER_CONNECTION);
 			log.error(e.getMessage());
 		}
-//        
-//        return Flux.interval(Duration.ofSeconds(30))
-//          .map(v -> {
-//                log.info(SENDING_HEARTBEAT);
-//                return HEARTBEAT_MSG;
-//          })
-//          .mergeWith(f);
+		
+		this.myMapStreams.put(name, flueStream);
+		
 		return flueStream;
+	}
+
+	public boolean isTreamAvailable(String topicName) {
+		return this.myMapStreams.containsKey(topicName);
+	}
+
+	@Override
+	public List<MarketData> getLAvailableMarkets() {
+		return MarketConfig.markets;
 	}
 
 }

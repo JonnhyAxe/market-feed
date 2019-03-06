@@ -25,6 +25,7 @@ import reactor.core.publisher.Mono;
 @RequestScope
 public class AmqpProducerController {
 	
+	private static final String MARKETS = "/markets";
 	private static final String PUBLISHER_TOPIC_NAME = "/topic/{topicName}";
 	private static final String SUBSCRIBER_TOPIC_NAME = "/topic/{topicName}";
 
@@ -35,9 +36,9 @@ public class AmqpProducerController {
 
 	@Autowired DataMessagingServiceImpl dataMessagingService;
 	
-	@GetMapping(path="/markets", produces = "application/json")
+	@GetMapping(path= MARKETS, produces = "application/json")
     public List<MarketData> getMarkets() {
-        return MarketConfig.markets;
+		return dataMessagingService.getLAvailableMarkets();
     }
      
 	
