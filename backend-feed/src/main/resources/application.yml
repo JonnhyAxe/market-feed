@@ -10,8 +10,3 @@ server.port : 8080
 #reactor.dispatchers.threadPoolExecutor.backlog : 256
 
 #server.tomcat.max-threads : 50
-management.endpoints.web.exposure.include : metrics,prometheus
-
-#server.jetty.acceptors= # Number of acceptor threads to use.
-#server.jetty.max-http-post-size=0 # Maximum size in bytes of the HTTP post or put content.
-#server.jetty.selectors= # Number of selector threads to use.
