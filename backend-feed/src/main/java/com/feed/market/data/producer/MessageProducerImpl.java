@@ -68,7 +68,7 @@ public class MessageProducerImpl implements MessageProducer {
 		} 
 	   this.executor =  Executors.newSingleThreadScheduledExecutor();
        log.info("Starting streaming with '{}'", topicName);
-       executor.scheduleAtFixedRate(RANDOM_MARKET_CHANGE_TASK, START_NOW, 50, TimeUnit.MICROSECONDS);
+       executor.scheduleAtFixedRate(RANDOM_MARKET_CHANGE_TASK, START_NOW, 30, TimeUnit.MICROSECONDS);
 
        return Boolean.TRUE;
 	}

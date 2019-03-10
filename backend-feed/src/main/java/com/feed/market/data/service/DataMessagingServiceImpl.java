@@ -59,7 +59,8 @@ public class DataMessagingServiceImpl implements DataMessagingService {
 	@Autowired
     private MessageListenerContainerFactory messageListenerContainerFactory;
 
-	@Autowired MessageProducer messageProducer;
+//	@Autowired 
+//	private MessageProducer messageProducer;
 
 	
 	@Override
@@ -104,9 +105,7 @@ public class DataMessagingServiceImpl implements DataMessagingService {
         	   return Flux.empty();
                        
         }
-        
-     
-    	
+
         javax.jms.TopicSession topicConsumerSession = messageListenerContainerFactory.createTopicConsumerConnectionSession(name, topicConsumerConnection);
         Flux<String> fluxStream = null;
 		try {
