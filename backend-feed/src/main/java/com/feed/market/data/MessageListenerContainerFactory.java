@@ -2,10 +2,8 @@ package com.feed.market.data;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.jms.JMSException;
 import javax.jms.Session;
@@ -13,11 +11,8 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicSession;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.activemq.command.ActiveMQTopic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.jms.listener.MessageListenerContainer;
-import org.springframework.jms.listener.SimpleMessageListenerContainer;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;

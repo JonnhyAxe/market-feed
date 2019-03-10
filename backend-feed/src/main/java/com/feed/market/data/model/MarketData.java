@@ -2,8 +2,6 @@ package com.feed.market.data.model;
 
 import javax.validation.constraints.NotNull;
 
-import org.aspectj.weaver.tools.Trace;
-
 import io.swagger.annotations.ApiModel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
