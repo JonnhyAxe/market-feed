@@ -1,7 +1,11 @@
 # spring-jms-rx-activemq
 
+0. mvn --projects backend-feed spring-boot:run
+1. http://localhost:8080/index.html#/ (this subscribes to http://localhost:8080/topic/price-updates)
+2. http://localhost:8080/swagger-ui.html#!/amqp-reactive-controller/startProducerUsingPOST and topicName as price-updates 
+3. http://localhost:8080/swagger-ui.html#!/amqp-reactive-controller/stopProducerUsingPOST and topicName as price-updates 
 
-http://localhost:8080/swagger-ui.html#/
+
 
 curl -v -H "Accept: text/event-stream" http://localhost:8080/topic/price-updates
 
