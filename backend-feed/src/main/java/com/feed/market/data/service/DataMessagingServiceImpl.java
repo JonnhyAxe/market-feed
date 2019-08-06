@@ -135,7 +135,7 @@ public class DataMessagingServiceImpl implements DataMessagingService {
 					try {
 						emitter.next(msg.getText());
 						
-						log.info(MESSAGE_SENT_TO_CLIENT_TOPIC_TEXT, name, msg.getText());
+//						log.info(MESSAGE_SENT_TO_CLIENT_TOPIC_TEXT, name, msg.getText());
 					} catch (JMSException e) {
 						log.error(ERROR_SENDING_MESSAGE_TO_CLIENT);
 						log.error(e.getMessage());

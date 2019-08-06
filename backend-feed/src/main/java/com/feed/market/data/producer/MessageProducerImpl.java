@@ -68,14 +68,14 @@ public class MessageProducerImpl implements MessageProducer {
 		} 
 	   this.executor =  Executors.newSingleThreadScheduledExecutor();
        log.info("Starting streaming with '{}'", topicName);
-       executor.scheduleAtFixedRate(RANDOM_MARKET_CHANGE_TASK, START_NOW, 30, TimeUnit.MICROSECONDS);
+       executor.scheduleAtFixedRate(RANDOM_MARKET_CHANGE_TASK, START_NOW, 50, TimeUnit.MILLISECONDS);
 
        return Boolean.TRUE;
 	}
 
 	@Override
 	public Boolean stopProducing(String topicName) {
-		 log.info("Stop streaming for topic'{}'", topicName);
+		 log.info("Stopping streaming for topic'{}'", topicName);
 		 
 		 try {
 			mlcSession.close();
@@ -85,6 +85,7 @@ public class MessageProducerImpl implements MessageProducer {
 			return Boolean.FALSE;
 		}
 		 if(!executor.isShutdown()) {
+			 log.info("Stopped streaming for topic'{}'", topicName);
 			 executor.shutdown(); 
 		 }
 		
